@@ -75,7 +75,7 @@ std::vector<double> radixSort(std::vector<double> arr)
 
     for (double value : arr)
     {
-        int number = static_cast<int>(value * scale);
+        int number = static_cast<int>(std::round(value * scale));
         if (number < 0)
             negative.push_back(-number);
         else
