@@ -19,9 +19,9 @@ static void sortDigits(std::vector<int>& a)
             buckets[digit].push_back(number);
         }
         a.clear();
-        for (const auto& bucket : buckets)
-            for (int number : bucket)
-                a.push_back(number);
+        for (int i = 0; i < 10; ++i)
+            for (int j = 0; j < static_cast<int>(buckets[i].size()); ++j)
+                a.push_back(buckets[i][j]);
         if (exp > maximum / 10)
             break;
         exp *= 10;
