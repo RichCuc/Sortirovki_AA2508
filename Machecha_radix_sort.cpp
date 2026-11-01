@@ -4,28 +4,30 @@
 #include <cmath>
 #include <string>
 
-static void sortDigits(std::vector<int>& numbers)
+static void sortDigits(std::vector<int>& a)
 {
-    int maximum = 0;
-    for (int number : numbers)
-        if (number > maximum)
-            maximum = number;
-    for (int exp = 1; maximum / exp > 0; exp *= 10)
+    if (a.empty())
+        return;
+    int maximum = *std::max_element(a.begin(), a.end());
+    int exp = 1;
+    while (maximum / exp > 0)
     {
-        int count[10] = {};
-        std::vector<int> result(numbers.size());
-        for (int x : numbers)
-            ++count[(x / exp) % 10];
-        for (int i = 1; i < 10; ++i)
-            count[i] += count[i - 1];
-        for (int i = static_cast<int>(numbers.size()); i > 0; --i)
+        std::vector<int> buckets[10];
+        for (int number : a)
         {
-            int digit = static_cast<int>((numbers[i - 1] / exp) % 10);
-            result[--count[digit]] = numbers[i - 1];
+            int digit = (number / exp) % 10;
+            buckets[digit].push_back(number);
         }
-        numbers = result;
+        a.clear();
+        for (const auto& bucket : buckets)
+            for (int number : bucket)
+                a.push_back(number);
+        if (exp > maximum / 10)
+            break;
+        exp *= 10;
     }
 }
+
 
 
 std::vector<int> radixSort(std::vector<int> arr)
