@@ -4,92 +4,80 @@
 #include <cmath>
 #include <string>
 
-
-static void sortDigits(std::vector<long long>& a)
+static void sortDigits(std::vector<int>& numbers)
 {
-    long long maximum = 0;
-    for (long long x : a)
-        if (x > maximum)
-            maximum = x;
-    for (long long exp = 1; maximum / exp > 0; exp *= 10)
+    int maximum = 0;
+    for (int number : numbers)
+        if (number > maximum)
+            maximum = number;
+    for (int exp = 1; maximum / exp > 0; exp *= 10)
     {
-        std::size_t count[10] = {};
-        std::vector<long long> result(a.size());
-        for (long long x : a)
+        int count[10] = {};
+        std::vector<int> result(numbers.size());
+        for (int x : numbers)
             ++count[(x / exp) % 10];
         for (int i = 1; i < 10; ++i)
-            count[i] += count[i - 1];.
-        for (std::size_t i = a.size(); i > 0; --i)
+            count[i] += count[i - 1];
+        for (int i = static_cast<int>(numbers.size()); i > 0; --i)
         {
-            int digit = (a[i - 1] / exp) % 10;
-            result[--count[digit]] = a[i - 1];
+            int digit = static_cast<int>((numbers[i - 1] / exp) % 10);
+            result[--count[digit]] = numbers[i - 1];
         }
-        a = result;
+        numbers = result;
     }
 }
 
+
 std::vector<int> radixSort(std::vector<int> arr)
 {
-    std::vector<long long> positive;
-    std::vector<long long> negative;
+    std::vector<int> positive;
+    std::vector<int> negative;
 
-    for (int x : arr)
+    for (int value : arr)
     {
-        if (x < 0)
-            negative.push_back(-static_cast<long long>(x));
+        if (value < 0)
+            negative.push_back(-static_cast<int>(value));
         else
-            positive.push_back(x);
+            positive.push_back(value);
     }
 
     sortDigits(positive);
     sortDigits(negative);
-
     arr.clear();
-
-    for (std::size_t i = negative.size(); i > 0; --i)
+    for (int i = static_cast<int>(negative.size()); i > 0; --i)
         arr.push_back(static_cast<int>(-negative[i - 1]));
-
-    for (long long x : positive)
-        arr.push_back(static_cast<int>(x));
-
+    for (int number : positive)
+        arr.push_back(static_cast<int>(number));
     return arr;
 }
 
 std::vector<double> radixSort(std::vector<double> arr)
 {
     int decimalPlaces = 0;
-    for (double x : arr)
+
+    for (double value : arr)
     {
-        char buffer[512];
-        auto result = std::to_chars(
-            buffer, buffer + sizeof(buffer),
-            x, std::chars_format::fixed
-        );
-
-        std::string text(buffer, result.ptr);
-        std::size_t point = text.find('.');
-
-        if (point != std::string::npos)
-            decimalPlaces = std::max(
-                decimalPlaces,
-                static_cast<int>(text.size() - point - 1)
-            );
+        std::string text = std::to_string(value);
+        while (text.back() == '0')
+            text.pop_back();
+        int length = static_cast<int>(text.size());
+        int point = 0;
+        while (point < length && text[point] != '.')
+            ++point;
+        if (point < length)
+            decimalPlaces = std::max(decimalPlaces, length - point - 1);
     }
 
-    long long scale = 1;
+    int scale = std::pow(10, decimalPlaces);
 
-    for (int i = 0; i < decimalPlaces; ++i)
-        scale *= 10;
+    std::vector<int> positive;
+    std::vector<int> negative;
 
-    std::vector<long long> positive;
-    std::vector<long long> negative;
-
-    for (double x : arr)
+    for (double value : arr)
     {
-        long long number = std::llround(std::abs(x) * scale);
-
-        if (x < 0)
-            negative.push_back(number);
+        int number = static_cast<int>(value * scale);
+        if (number < 0)
+            negative.push_back(-number);
         else
             positive.push_back(number);
     }
@@ -99,11 +87,10 @@ std::vector<double> radixSort(std::vector<double> arr)
 
     arr.clear();
 
-    for (std::size_t i = negative.size(); i > 0; --i)
-        arr.push_back(-static_cast<double>(negative[i - 1]) / scale);
-
-    for (long long x : positive)
-        arr.push_back(static_cast<double>(x) / scale);
+    for (int i = static_cast<int>(negative.size()); i > 0; --i)
+        arr.push_back(-static_cast<double>(negative[i - 1]) / static_cast<double>(scale));
+    for (int number : positive)
+        arr.push_back(static_cast<double>(number) / static_cast<double>(scale));
 
     return arr;
 }
