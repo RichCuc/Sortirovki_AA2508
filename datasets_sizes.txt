@@ -1,0 +1,22 @@
+Количество элементов в тестовых файлах
+
+comb_best.txt               200
+comb_average.txt           2000
+comb_worst.txt            10000
+gnome_best.txt              100
+gnome_average.txt          1000
+gnome_worst.txt           10000
+radix_best.txt            10000
+radix_average.txt         20000
+radix_worst.txt           30000
+shaker_best.txt             100
+shaker_average.txt         1000
+shaker_worst.txt          10000
+heap_best.txt               500
+heap_average.txt           5000
+heap_worst.txt            10000
+
+Отдельное сравнение размеров:
+size_100.txt                  100
+size_1000.txt                1000
+size_10000.txt              10000
