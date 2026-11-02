@@ -1,12 +1,13 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
+#include <string>
 #include <algorithm>
 #include <chrono>
-#include <fstream>
-#include <cmath>
 #include <iomanip>
+#include <cmath>
 #include <utility>
-#include <string>
+
 #include "CombSort_Sannikov.h"
 #include "GnomeSort_Zykov.h"
 #include "Machecha_radix_sort.h"
@@ -17,77 +18,82 @@ using namespace std;
 
 int main()
 {
-    ifstream file("array.txt");
-    if (!file)
+    // В files.txt записаны имена 18 файлов с массивами.
+    ifstream list("files.txt");
+    if (!list)
     {
-        cout << "Не удалось открыть array.txt.\n";
+        cout << "Не удалось открыть files.txt.\n";
         return 1;
     }
 
-    vector<double> original;
-    double value;
-    while (file >> ws && !file.eof())
+    vector<string> files;
+    string filename;
+    int fileWidth = 24;
+    while (list >> filename)
     {
-        if (!(file >> value) || !isfinite(value))
-        {
-            cout << "Ошибка в array.txt: нужны числа с точкой.\n";
-            return 1;
-        }
-        original.push_back(value);
+        files.push_back(filename);
+        fileWidth = max(fileWidth, static_cast<int>(filename.size()) + 2);
     }
-    if (original.empty())
+    if (files.size() != 18)
     {
-        cout << "Файл array.txt пуст.\n";
+        cout << "В files.txt должно быть 18 имён файлов. Сейчас: "
+             << files.size() << "\n";
         return 1;
     }
-    int n = static_cast<int>(original.size());
-    cout << "Считано чисел: " << n << "\n";
 
-    vector<double> expected = original;
-    sort(expected.begin(), expected.end());
+    string names[] = {"Comb", "Gnome", "Radix", "Shaker", "Heap", "std::sort"};
+    const int timeWidth = 13;
+    int tableWidth = fileWidth + 9 + 6 * timeWidth;
+    int loaded = 0;
+    int errors = 0;
 
-    string names[] = {"Расчёской", "Гномья", "Поразрядная",
-                      "Шейкерная", "Пирамидальная", "std::sort"};
+    cout << "Автоматический запуск: 18 файлов, 6 сортировок, всего 108 запусков.\n";
+    cout << "Время в миллисекундах, один запуск на каждую пару файл/сортировка.\n";
+    cout << "Comb: расчёской, Gnome: гномья, Radix: поразрядная,\n"
+         << "Shaker: шейкерная, Heap: пирамидальная.\n\n";
+    cout << left << setw(fileWidth) << "File" << right << setw(9) << "Count";
+    for (const string& name : names)
+        cout << setw(timeWidth) << name;
+    cout << "\n" << string(tableWidth, '-') << "\n";
+    cout << fixed << setprecision(6);
 
-    cout << defaultfloat << setprecision(15);
-    cout << "Исходный массив: ";
-    for (double value : original)
-        cout << value << " ";
-    cout << "\n";
-
-    while (true)
+    // Внешний цикл перебирает файлы, внутренний — сортировки.
+    for (const string& filename : files)
     {
-        cout << "\n1. Сортировка расчёской\n"
-             << "2. Гномья сортировка\n"
-             << "3. Поразрядная сортировка\n"
-             << "4. Шейкерная сортировка\n"
-             << "5. Пирамидальная сортировка\n"
-             << "6. std::sort\n"
-             << "7. Все сортировки\n"
-             << "0. Выход\n"
-             << "Ваш выбор: ";
+        ifstream file(filename);
+        vector<double> original;
+        double value;
+        bool valid = file.is_open();
 
-        int choice;
-        if (!(cin >> choice))
+        while (valid && file >> ws && !file.eof())
         {
-            cout << "Нужно ввести целое число.\n";
-            return 1;
+            if (!(file >> value) || !isfinite(value))
+                valid = false;
+            else
+                original.push_back(value);
         }
-        if (choice == 0)
-            break;
-        if (choice < 1 || choice > 7)
+
+        cout << left << setw(fileWidth) << filename << right;
+        if (!valid || original.empty())
         {
-            cout << "Нет такого пункта.\n";
+            cout << setw(9) << "-";
+            for (int i = 0; i < 6; i++)
+                cout << setw(timeWidth) << "FILE ERROR";
+            cout << "\n";
             continue;
         }
 
-        vector<double> result;
+        loaded++;
+        int n = static_cast<int>(original.size());
+        cout << setw(9) << n;
+
+        // Эталон готовим вне замера.
+        vector<double> expected = original;
+        sort(expected.begin(), expected.end());
 
         for (int number = 1; number <= 6; number++)
         {
-            if (choice != 7 && choice != number)
-                continue;
-
+            // Все сортировки получают одинаковый исходный массив.
             vector<double> arr = original;
             auto start = chrono::steady_clock::now();
 
@@ -114,21 +120,25 @@ int main()
             }
 
             auto finish = chrono::steady_clock::now();
-            double milliseconds = chrono::duration<double, milli>(finish - start).count();
+            double milliseconds =
+                chrono::duration<double, milli>(finish - start).count();
 
-            cout << fixed << setprecision(6);
-            cout << names[number - 1] << ": " << milliseconds << " мс";
-            cout << (arr == expected ? " | OK\n" : " | Ошибка сортировки\n");
-
-            result = std::move(arr);
+            if (arr == expected)
+                cout << setw(timeWidth) << milliseconds << flush;
+            else
+            {
+                cout << setw(timeWidth) << "ERROR";
+                errors++;
+            }
         }
-
-        cout << defaultfloat << setprecision(15);
-        cout << (result == expected ? "Отсортированный массив: "
-                                   : "Результат с ошибкой: ");
-        for (double value : result)
-            cout << value << " ";
         cout << "\n";
     }
-    return 0;
+
+    cout << string(tableWidth, '-') << "\n";
+    cout << "Прочитано файлов: " << loaded << "/18.\n";
+    cout << "Выполнено сортировок: " << loaded * 6 << ".\n";
+    cout << "Ошибок результатов: " << errors << ".\n";
+    cout << "ERROR: результат не совпал с эталоном.\n";
+    cout << "FILE ERROR: файл не найден, пуст или содержит неверные данные.\n";
+    return (loaded == 18 && errors == 0) ? 0 : 1;
 }
